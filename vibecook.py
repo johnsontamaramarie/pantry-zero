@@ -27,7 +27,7 @@ if 'search_clicked' not in st.session_state:
 
 if not st.session_state.search_clicked:
     st.markdown("---")
-    st.markdown("### 🥦 Featured: Mediterranean Chickpea Salad")
+    st.markdown("### ⭐️ Featured: Mediterranean Chickpea Salad")
     with st.container(border=True):
         c1, c2 = st.columns([1, 2])
         with c1:
