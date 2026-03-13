@@ -27,20 +27,19 @@ if 'search_clicked' not in st.session_state:
 
 if not st.session_state.search_clicked:
     st.markdown("---")
-    st.markdown("### 🥗 Featured: Healthy Salad")
+    st.markdown("### 🌟 Featured:")
     
-    # Forced specific search for a salad to guarantee a result
+    # Absolute simplest call possible to guarantee the API returns SOMETHING
     feat_url = f"https://api.spoonacular.com/recipes/complexSearch"
     feat_params = {
         "apiKey": API_KEY, 
-        "query": "healthy salad",
-        "addRecipeInformation": True,
+        "query": "salad",
         "number": 1,
-        "minHealthScore": 50
+        "addRecipeInformation": True
     }
     try:
         f_res = requests.get(feat_url, params=feat_params).json()
-        if f_res.get('results'):
+        if f_res.get('results') and len(f_res['results']) > 0:
             feat = f_res['results'][0]
             with st.container(border=True):
                 c1, c2 = st.columns([1, 2])
@@ -51,8 +50,10 @@ if not st.session_state.search_clicked:
                     st.write(f"{get_time_category(feat['readyInMinutes'])} | {get_health_vibe(feat['healthScore'])}")
                     st.link_button("Try This Recipe", feat['sourceUrl'])
         else:
+            # This shows if the API specifically returns 0 results
             st.info("Welcome! Enter your ingredients below to start cooking.")
     except:
+        # This shows if the API connection fails entirely
         st.info("Welcome! Enter your ingredients below to start cooking.")
 
 st.markdown("---")
@@ -110,10 +111,8 @@ if st.button("Find Recipes", use_container_width=True):
                     for recipe in data["results"]:
                         # Filters
                         max_mins = 30 if time_limit == "30 min" else 60 if time_limit == "1 hour" else 1000
-                        if recipe['readyInMinutes'] > max_mins: 
-                            continue
-                        if recipe['healthScore'] < health_min: 
-                            continue
+                        if recipe['readyInMinutes'] > max_mins: continue
+                        if recipe['healthScore'] < health_min: continue
                         
                         # Halal Guardrail
                         if "Halal" in diet_pref:
@@ -124,10 +123,8 @@ if st.button("Find Recipes", use_container_width=True):
                         # Flavor Vibe
                         dish_types = recipe.get('dishTypes', [])
                         is_sweet = any(tag in ['dessert', 'pancake', 'sweet', 'cake'] for tag in dish_types)
-                        if flavor_vibe == "Sweet 🍬" and not is_sweet: 
-                            continue
-                        if flavor_vibe == "Savory 🥘" and is_sweet: 
-                            continue
+                        if flavor_vibe == "Sweet 🍬" and not is_sweet: continue
+                        if flavor_vibe == "Savory 🥘" and is_sweet: continue
 
                         found_any = True
                         with st.container(border=True):
