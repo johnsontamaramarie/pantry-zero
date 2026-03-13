@@ -27,12 +27,16 @@ if 'search_clicked' not in st.session_state:
 
 if not st.session_state.search_clicked:
     st.markdown("---")
-    st.markdown("### 🌟 Featured:")
-    st.caption("Healthy, Vegan, Kosher & Halal Friendly")
+    st.markdown("### 🌟 Featured Recipe")
     
+    # We loosened the filters here to ensure something ALWAYS shows up
     feat_url = f"https://api.spoonacular.com/recipes/complexSearch"
     feat_params = {
-        "apiKey": API_KEY, "diet": "vegan", "minHealthScore": 80, "number": 1, "addRecipeInformation": True
+        "apiKey": API_KEY, 
+        "minHealthScore": 70, # Slightly lower to find more gems
+        "number": 1, 
+        "addRecipeInformation": True,
+        "sort": "random" # Gives a fresh vibe every few hours
     }
     try:
         f_res = requests.get(feat_url, params=feat_params).json()
@@ -47,7 +51,7 @@ if not st.session_state.search_clicked:
                     st.write(f"{get_time_category(feat['readyInMinutes'])} | {get_health_vibe(feat['healthScore'])}")
                     st.link_button("Try This Recipe", feat['sourceUrl'])
     except:
-        st.write("Welcome! Start by entering your ingredients below.")
+        st.info("Welcome! Enter your ingredients below to start cooking.")
 
 st.markdown("---")
 
