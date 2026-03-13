@@ -27,16 +27,15 @@ if 'search_clicked' not in st.session_state:
 
 if not st.session_state.search_clicked:
     st.markdown("---")
-    st.markdown("### 🌟 Featured Recipe")
+    st.markdown("### 🌟 Featured: Fresh Pick")
     
-    # We loosened the filters here to ensure something ALWAYS shows up
+    # Updated to grab the newest addition to the Spoonacular database
     feat_url = f"https://api.spoonacular.com/recipes/complexSearch"
     feat_params = {
         "apiKey": API_KEY, 
-        "minHealthScore": 70, # Slightly lower to find more gems
+        "sort": "time",           # This pulls the newest recipes first
         "number": 1, 
-        "addRecipeInformation": True,
-        "sort": "random" # Gives a fresh vibe every few hours
+        "addRecipeInformation": True
     }
     try:
         f_res = requests.get(feat_url, params=feat_params).json()
@@ -50,6 +49,8 @@ if not st.session_state.search_clicked:
                     st.markdown(f"#### {feat['title']}")
                     st.write(f"{get_time_category(feat['readyInMinutes'])} | {get_health_vibe(feat['healthScore'])}")
                     st.link_button("Try This Recipe", feat['sourceUrl'])
+        else:
+            st.info("Welcome! Enter your ingredients below to start cooking.")
     except:
         st.info("Welcome! Enter your ingredients below to start cooking.")
 
