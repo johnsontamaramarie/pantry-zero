@@ -1,6 +1,5 @@
 import streamlit as st
 import requests
-import random
 
 # --- 1. CONFIG & API KEY ---
 API_KEY = "62b81ab8ac634d59b045f0f87cbbab04" 
@@ -79,7 +78,6 @@ if st.button("Find Recipes", use_container_width=True):
         st.error("Please tell us what's in your pantry first!")
     else:
         url = "https://api.spoonacular.com/recipes/complexSearch"
-        
         api_diets = [d for d in diet_pref if d not in ["Low Sodium", "Halal"]]
         
         params = {
@@ -106,8 +104,45 @@ if st.button("Find Recipes", use_container_width=True):
                     for recipe in data["results"]:
                         # Filters
                         max_mins = 30 if time_limit == "30 min" else 60 if time_limit == "1 hour" else 1000
-                        if recipe['readyInMinutes'] > max_mins: continue
-                        if recipe['healthScore'] < health_min: continue
+                        if recipe['readyInMinutes'] > max_mins: 
+                            continue
+                        if recipe['healthScore'] < health_min: 
+                            continue
                         
                         # Halal Guardrail
-                        if
+                        if "Halal" in diet_pref:
+                            title_low = recipe['title'].lower()
+                            if any(bad in title_low for bad in ['pork', 'bacon', 'ham', 'wine', 'alcohol']):
+                                continue
+                        
+                        # Flavor Vibe
+                        dish_types = recipe.get('dishTypes', [])
+                        is_sweet = any(tag in ['dessert', 'pancake', 'sweet', 'cake'] for tag in dish_types)
+                        if flavor_vibe == "Sweet 🍬" and not is_sweet: 
+                            continue
+                        if flavor_vibe == "Savory 🥘" and is_sweet: 
+                            continue
+
+                        found_any = True
+                        with st.container(border=True):
+                            c1, c2 = st.columns([1, 2])
+                            with c1:
+                                st.image(recipe['image'], use_container_width=True)
+                            with c2:
+                                st.markdown(f"### {recipe['title']}")
+                                st.write(f"{get_time_category(recipe['readyInMinutes'])} | {get_health_vibe(recipe['healthScore'])}")
+                                
+                                real_miss = [i['name'] for i in recipe['missedIngredients'] if i['name'].lower() not in STAPLES]
+                                if not real_miss:
+                                    st.success("✅ Ready to cook now!")
+                                else:
+                                    st.info(f"🛒 Missing: {', '.join(real_miss[:2])}")
+                                
+                                st.link_button("View Recipe", recipe['sourceUrl'])
+                    
+                    if not found_any:
+                        st.warning("Filters are too strict! Try lowering the Health Score.")
+                else:
+                    st.warning("No recipes found! Try listing general ingredients.")
+            except Exception as e:
+                st.error(f"Error: {e}")
