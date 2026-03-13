@@ -28,7 +28,7 @@ if 'search_clicked' not in st.session_state:
 
 if not st.session_state.search_clicked:
     st.markdown("---")
-    st.markdown("### 🌟 Featured: The Universal Vibe")
+    st.markdown("### 🌟 Featured:")
     st.caption("Healthy, Vegan, Kosher & Halal Friendly")
     
     feat_url = f"https://api.spoonacular.com/recipes/complexSearch"
@@ -77,7 +77,7 @@ st.subheader("4. Health")
 health_min = st.slider("Minimum Health Score (0-100):", 0, 100, 0)
 
 # --- 4. THE SEARCH LOGIC ---
-if st.button("Find My Recipe", use_container_width=True):
+if st.button("Find Recipes", use_container_width=True):
     st.session_state.search_clicked = True
     if not pantry_input:
         st.error("Please tell us what's in your pantry first!")
