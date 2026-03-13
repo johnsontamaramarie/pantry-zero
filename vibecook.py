@@ -80,17 +80,16 @@ if st.button("Find Recipes", use_container_width=True):
     else:
         url = "https://api.spoonacular.com/recipes/complexSearch"
         
-        # Filter logic
         api_diets = [d for d in diet_pref if d not in ["Low Sodium", "Halal"]]
         
         params = {
             "apiKey": API_KEY,
-            "includeIngredients": pantry_input,  # CHANGED: Now looks for ingredients, not titles
+            "includeIngredients": pantry_input,
             "addRecipeInformation": True,
             "fillIngredients": True,
-            "number": 20,                       # Increased pool for better filtering
-            "ranking": 1,                        # Prioritizes recipes with fewer missing items
-            "ignorePantry": True,                # Assumes you have salt, oil, etc.
+            "number": 20,
+            "ranking": 1,
+            "ignorePantry": True,
             "diet": ",".join(api_diets).lower()
         }
         
@@ -105,10 +104,10 @@ if st.button("Find Recipes", use_container_width=True):
                 if "results" in data and len(data["results"]) > 0:
                     found_any = False
                     for recipe in data["results"]:
-                        # Post-API Filtering
+                        # Filters
                         max_mins = 30 if time_limit == "30 min" else 60 if time_limit == "1 hour" else 1000
                         if recipe['readyInMinutes'] > max_mins: continue
                         if recipe['healthScore'] < health_min: continue
                         
                         # Halal Guardrail
-                        if "Halal" in diet_pref:
+                        if
