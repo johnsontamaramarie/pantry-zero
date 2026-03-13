@@ -21,40 +21,22 @@ st.set_page_config(page_title="PantryZero", page_icon="✅", layout="centered")
 st.title("✅ PantryZero")
 st.markdown("### *Use everything. Waste nothing.*")
 
-# --- FEATURED RECIPE LOGIC ---
+# --- FIXED FEATURED RECIPE (COST: 0 POINTS) ---
 if 'search_clicked' not in st.session_state:
     st.session_state.search_clicked = False
 
 if not st.session_state.search_clicked:
     st.markdown("---")
-    st.markdown("### 🌟 Featured:")
-    
-    # Absolute simplest call possible to guarantee the API returns SOMETHING
-    feat_url = f"https://api.spoonacular.com/recipes/complexSearch"
-    feat_params = {
-        "apiKey": API_KEY, 
-        "query": "salad",
-        "number": 1,
-        "addRecipeInformation": True
-    }
-    try:
-        f_res = requests.get(feat_url, params=feat_params).json()
-        if f_res.get('results') and len(f_res['results']) > 0:
-            feat = f_res['results'][0]
-            with st.container(border=True):
-                c1, c2 = st.columns([1, 2])
-                with c1:
-                    st.image(feat['image'], use_container_width=True)
-                with c2:
-                    st.markdown(f"#### {feat['title']}")
-                    st.write(f"{get_time_category(feat['readyInMinutes'])} | {get_health_vibe(feat['healthScore'])}")
-                    st.link_button("Try This Recipe", feat['sourceUrl'])
-        else:
-            # This shows if the API specifically returns 0 results
-            st.info("Welcome! Enter your ingredients below to start cooking.")
-    except:
-        # This shows if the API connection fails entirely
-        st.info("Welcome! Enter your ingredients below to start cooking.")
+    st.markdown("### 🌟 Featured: Mediterranean Chickpea Salad")
+    with st.container(border=True):
+        c1, c2 = st.columns([1, 2])
+        with c1:
+            # Using a static image URL to save API points
+            st.image("https://spoonacular.com/recipeImages/637311-312x231.jpg", use_container_width=True)
+        with c2:
+            st.write("⚡ Fast | 🟢 High Nutrient")
+            st.write("A refreshing, budget-friendly classic using pantry staples.")
+            st.link_button("View Recipe", "https://spoonacular.com/recipes/mediterranean-chickpea-salad-637311")
 
 st.markdown("---")
 
@@ -78,7 +60,7 @@ with col_diet:
 st.subheader("4. Health")
 health_min = st.slider("Minimum Health Score (0-100):", 0, 100, 0)
 
-# --- 4. THE SEARCH LOGIC ---
+# --- 4. THE BUDGET SEARCH LOGIC ---
 if st.button("Find Recipes", use_container_width=True):
     st.session_state.search_clicked = True
     if not pantry_input:
@@ -87,13 +69,13 @@ if st.button("Find Recipes", use_container_width=True):
         url = "https://api.spoonacular.com/recipes/complexSearch"
         api_diets = [d for d in diet_pref if d not in ["Low Sodium", "Halal"]]
         
+        # BUDGET SETTINGS: Reduced number and removed fillIngredients
         params = {
             "apiKey": API_KEY,
             "includeIngredients": pantry_input,
-            "addRecipeInformation": True,
-            "fillIngredients": True,
-            "number": 20,
-            "ranking": 1,
+            "addRecipeInformation": True, 
+            "number": 10,           # Lowered from 20 to 10 to save points
+            "ranking": 1, 
             "ignorePantry": True,
             "diet": ",".join(api_diets).lower()
         }
@@ -104,6 +86,11 @@ if st.button("Find Recipes", use_container_width=True):
         with st.spinner('Scanning the kitchen universe...'):
             try:
                 response = requests.get(url, params=params)
+                
+                # Show points used in the sidebar for transparency
+                used_points = response.headers.get('x-api-quota-used', 'Unknown')
+                st.sidebar.write(f"📊 Points used today: {used_points}/150")
+
                 data = response.json()
 
                 if "results" in data and len(data["results"]) > 0:
@@ -116,8 +103,7 @@ if st.button("Find Recipes", use_container_width=True):
                         
                         # Halal Guardrail
                         if "Halal" in diet_pref:
-                            title_low = recipe['title'].lower()
-                            if any(bad in title_low for bad in ['pork', 'bacon', 'ham', 'wine', 'alcohol']):
+                            if any(bad in recipe['title'].lower() for bad in ['pork', 'bacon', 'ham', 'wine', 'alcohol']):
                                 continue
                         
                         # Flavor Vibe
@@ -135,17 +121,18 @@ if st.button("Find Recipes", use_container_width=True):
                                 st.markdown(f"### {recipe['title']}")
                                 st.write(f"{get_time_category(recipe['readyInMinutes'])} | {get_health_vibe(recipe['healthScore'])}")
                                 
-                                real_miss = [i['name'] for i in recipe['missedIngredients'] if i['name'].lower() not in STAPLES]
-                                if not real_miss:
+                                # Budget-friendly ingredient display
+                                miss_count = recipe.get('missedIngredientCount', 0)
+                                if miss_count == 0:
                                     st.success("✅ Ready to cook now!")
                                 else:
-                                    st.info(f"🛒 Missing: {', '.join(real_miss[:2])}")
+                                    st.info(f"🛒 Missing about {miss_count} ingredients")
                                 
                                 st.link_button("View Recipe", recipe['sourceUrl'])
                     
                     if not found_any:
                         st.warning("Filters are too strict! Try lowering the Health Score.")
                 else:
-                    st.warning("No recipes found! Try listing general ingredients.")
+                    st.warning("No recipes found! (Or API limit reached).")
             except Exception as e:
                 st.error(f"Error: {e}")
