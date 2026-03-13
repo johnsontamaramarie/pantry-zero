@@ -53,15 +53,12 @@ if not st.session_state.search_clicked:
 st.markdown("---")
 
 # --- INPUT SECTIONS ---
-# (1) PANTRY
 st.subheader("1. What’s in the pantry?")
 pantry_input = st.text_input("Ingredients:", placeholder="e.g. avocado, spinach, oats")
 
-# (2) PREP TIME
 st.subheader("2. Prep Time")
 time_limit = st.select_slider("How much time do you have?", options=["30 min", "1 hour", "Any"])
 
-# (3) PREFERENCES
 st.subheader("3. Preferences")
 col_vibe, col_diet = st.columns(2)
 with col_vibe:
@@ -72,7 +69,6 @@ with col_diet:
         ["Vegetarian", "Vegan", "Gluten Free", "Dairy Free", "Kosher", "Low Sodium", "Halal"]
     )
 
-# (4) HEALTH
 st.subheader("4. Health")
 health_min = st.slider("Minimum Health Score (0-100):", 0, 100, 0)
 
@@ -89,54 +85,30 @@ if st.button("Find Recipes", use_container_width=True):
         
         params = {
             "apiKey": API_KEY,
-            "query": pantry_input,
+            "includeIngredients": pantry_input,  # CHANGED: Now looks for ingredients, not titles
             "addRecipeInformation": True,
             "fillIngredients": True,
-            "number": 15,
-            "sort": "min-missing-ingredients",
+            "number": 20,                       # Increased pool for better filtering
+            "ranking": 1,                        # Prioritizes recipes with fewer missing items
+            "ignorePantry": True,                # Assumes you have salt, oil, etc.
             "diet": ",".join(api_diets).lower()
         }
         
         if "Low Sodium" in diet_pref:
             params["maxSodium"] = 500
         
-        with st.spinner('Scanning the fridge...'):
+        with st.spinner('Scanning the kitchen universe...'):
             try:
                 response = requests.get(url, params=params)
                 data = response.json()
 
                 if "results" in data and len(data["results"]) > 0:
+                    found_any = False
                     for recipe in data["results"]:
-                        # Filters
+                        # Post-API Filtering
                         max_mins = 30 if time_limit == "30 min" else 60 if time_limit == "1 hour" else 1000
                         if recipe['readyInMinutes'] > max_mins: continue
                         if recipe['healthScore'] < health_min: continue
                         
                         # Halal Guardrail
                         if "Halal" in diet_pref:
-                            if any(bad in recipe['title'].lower() for bad in ['pork', 'bacon', 'ham', 'wine', 'alcohol']): continue
-                        
-                        # Flavor Vibe
-                        is_sweet = any(tag in ['dessert', 'pancake', 'sweet', 'cake'] for tag in recipe.get('dishTypes', []))
-                        if flavor_vibe == "Sweet 🍬" and not is_sweet: continue
-                        if flavor_vibe == "Savory 🥘" and is_sweet: continue
-
-                        with st.container(border=True):
-                            c1, c2 = st.columns([1, 2])
-                            with c1:
-                                st.image(recipe['image'], use_container_width=True)
-                            with c2:
-                                st.markdown(f"### {recipe['title']}")
-                                st.write(f"{get_time_category(recipe['readyInMinutes'])} | {get_health_vibe(recipe['healthScore'])}")
-                                
-                                real_miss = [i['name'] for i in recipe['missedIngredients'] if i['name'].lower() not in STAPLES]
-                                if not real_miss:
-                                    st.success("✅ Ready to cook now!")
-                                else:
-                                    st.info(f"🛒 Missing: {', '.join(real_miss[:2])}")
-                                
-                                st.link_button("View Recipe", recipe['sourceUrl'])
-                else:
-                    st.warning("No recipes found! Try broadening your pantry list.")
-            except Exception as e:
-                st.error(f"Error connecting to the kitchen universe: {e}")
